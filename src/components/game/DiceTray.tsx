@@ -40,13 +40,24 @@ export function DiceTray({ onRoll }: DiceTrayProps) {
 
   return (
     <View className="items-center gap-2">
-      <Dice
-        value={dice.value}
-        isRolling={dice.isRolling}
-        color={player.color}
-        disabled={!canRoll}
-        onPress={onRoll}
-      />
+      {/* Felt tray the die "drops" onto. */}
+      <View
+        className="items-center justify-center rounded-3xl bg-emerald-700/15 dark:bg-emerald-400/10 p-3"
+        style={{
+          shadowColor: '#000',
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+        }}
+      >
+        <Dice
+          value={dice.value}
+          isRolling={dice.isRolling}
+          color={player.color}
+          disabled={!canRoll}
+          onPress={onRoll}
+        />
+      </View>
       <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">
         {hint}
       </Text>

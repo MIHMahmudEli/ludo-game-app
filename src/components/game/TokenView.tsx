@@ -1,5 +1,6 @@
 import { memo, useEffect } from 'react';
 import { Pressable, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -8,7 +9,14 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { baseSlotCoord, coordForPosition, PLAYER_HEX, PLAYER_HEX_DARK, TIMINGS } from '@/constants';
+import {
+  baseSlotCoord,
+  coordForPosition,
+  PLAYER_HEX,
+  PLAYER_HEX_DARK,
+  PLAYER_HEX_LIGHT,
+  TIMINGS,
+} from '@/constants';
 import { useIsTokenMovable, useToken } from '@/store';
 import { ANIMATION_SPEED_FACTOR, useSettingsStore } from '@/store';
 
@@ -21,11 +29,9 @@ interface TokenViewProps {
 }
 
 /**
- * A single animated token.
- *
- * Subscribes only to its own token + movable flag, so it re-renders in
- * isolation (the engine preserves identity for untouched tokens). Movement is a
- * Reanimated glide on the UI thread — the React tree doesn't animate per frame.
+ * A single animated, glossy 3D token (original art — gradient + highlight, not
+ * Ludo King's pawn sprite). Subscribes only to its own token + movable flag, so
+ * it re-renders in isolation; movement is a Reanimated UI-thread glide.
  */
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
@@ -33,24 +39,24 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const size = cell * 0.7;
+  const size = cell * 0.72;
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const pulse = useSharedValue(1);
+  const lift = useSharedValue(0);
 
-  // Resolve the token's target grid coordinate → centred pixel position.
   let target: readonly [number, number];
   if (!token || token.state === 'base') {
     target = baseSlotCoord(token?.color ?? 'red', token?.index ?? 0);
   } else {
     target = coordForPosition(token.color, token.position);
   }
-  // Slight per-token offset so stacked tokens remain distinguishable.
   const jitter = token ? token.index * 1.5 : 0;
   const targetX = (target[1] + 0.5) * cell - size / 2 + jitter;
   const targetY = (target[0] + 0.5) * cell - size / 2 + jitter;
 
-  // Initialise without animating on first mount, then glide on changes.
+  // Initialise without animating on first mount, then glide on changes with a
+  // small "hop" (lift) so movement feels like a physical piece being placed.
   const mounted = useSharedValue(false);
   useEffect(() => {
     if (!mounted.value) {
@@ -61,14 +67,17 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     }
     tx.value = withTiming(targetX, { duration });
     ty.value = withTiming(targetY, { duration });
-  }, [targetX, targetY, duration, tx, ty, mounted]);
+    lift.value = withSequence(
+      withTiming(-cell * 0.22, { duration: duration / 2 }),
+      withTiming(0, { duration: duration / 2 }),
+    );
+  }, [targetX, targetY, duration, cell, tx, ty, lift, mounted]);
 
-  // Pulse highlight while the token is a legal choice.
   useEffect(() => {
     if (movable) {
       pulse.value = withRepeat(
         withSequence(
-          withTiming(1.14, { duration: 380 }),
+          withTiming(1.16, { duration: 380 }),
           withTiming(1, { duration: 380 }),
         ),
         -1,
@@ -83,12 +92,13 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const style = useAnimatedStyle(() => ({
     transform: [
       { translateX: tx.value },
-      { translateY: ty.value },
+      { translateY: ty.value + lift.value },
       { scale: pulse.value },
     ],
   }));
 
   if (!token) return null;
+  const color = token.color;
 
   return (
     <AnimatedPressable
@@ -102,38 +112,56 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           top: 0,
           width: size,
           height: size,
+          // The drop shadow gives the token a raised, tactile look.
+          shadowColor: '#000',
+          shadowOpacity: 0.4,
+          shadowRadius: 3,
+          shadowOffset: { width: 0, height: 2 },
+          elevation: 6,
         },
         style,
       ]}
     >
-      <View
+      <LinearGradient
+        colors={[PLAYER_HEX_LIGHT[color], PLAYER_HEX[color], PLAYER_HEX_DARK[color]]}
+        start={{ x: 0.25, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
         style={{
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: PLAYER_HEX[token.color],
-          borderColor: movable ? '#FFFFFF' : PLAYER_HEX_DARK[token.color],
           borderWidth: movable ? 3 : 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          // Elevation/shadow gives the token a tactile, raised look.
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 2,
-          shadowOffset: { width: 0, height: 1 },
-          elevation: 4,
+          borderColor: movable ? '#FFFFFF' : PLAYER_HEX_DARK[color],
+          overflow: 'hidden',
         }}
       >
+        {/* Glossy highlight near the top-left for a 3D marble look. */}
         <View
           style={{
-            width: size * 0.34,
-            height: size * 0.34,
-            borderRadius: size * 0.17,
+            position: 'absolute',
+            top: size * 0.12,
+            left: size * 0.18,
+            width: size * 0.5,
+            height: size * 0.3,
+            borderRadius: size * 0.25,
             backgroundColor: '#FFFFFF',
-            opacity: 0.9,
+            opacity: 0.45,
           }}
         />
-      </View>
+        {/* Center pip. */}
+        <View
+          style={{
+            position: 'absolute',
+            top: size * 0.42,
+            left: size * 0.42,
+            width: size * 0.16,
+            height: size * 0.16,
+            borderRadius: size * 0.08,
+            backgroundColor: '#FFFFFF',
+            opacity: 0.85,
+          }}
+        />
+      </LinearGradient>
     </AnimatedPressable>
   );
 }

@@ -62,9 +62,12 @@ export function Dice({ value, isRolling, color, disabled, onPress }: DiceProps) 
     } else {
       cancelAnimation(rotate);
       rotate.value = withTiming(0, { duration: 150 });
+      // Bouncy "landing" so the die feels like it drops onto the tray.
       scale.value = withSequence(
-        withTiming(1.18, { duration: 120 }),
-        withTiming(1, { duration: 120 }),
+        withTiming(1.25, { duration: 110 }),
+        withTiming(0.9, { duration: 90 }),
+        withTiming(1.08, { duration: 90 }),
+        withTiming(1, { duration: 90 }),
       );
     }
   }, [isRolling, rotate, scale]);
