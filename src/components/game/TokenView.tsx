@@ -28,9 +28,10 @@ interface TokenViewProps {
 }
 
 /**
- * A single animated, glossy map-pin token (the classic Ludo King teardrop
- * shape, original art). Subscribes only to its own token + movable flag, so it
- * re-renders in isolation; movement is a Reanimated UI-thread glide with a hop.
+ * A single animated, glossy map-pin token. Its square bounding box is centred
+ * exactly on the target cell (or yard slot) and the pin is flex-centred inside
+ * it, so the token always sits precisely on its grid position. Subscribes only
+ * to its own token + movable flag; movement is a Reanimated UI-thread glide.
  */
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
@@ -38,7 +39,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const box = cell * 0.84; // bounding box
+  const box = cell * 0.82; // square bounding box, centred on the cell
   const pin = box * 0.82; // teardrop size
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -51,9 +52,9 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   } else {
     target = coordForPosition(token.color, token.position);
   }
-  const jitter = token ? token.index * 1.5 : 0;
-  const targetX = (target[1] + 0.5) * cell - box / 2 + jitter;
-  const targetY = (target[0] + 0.5) * cell - box / 2 + jitter;
+  // Centre the box on the cell: top-left = cell-centre − box/2.
+  const targetX = (target[1] + 0.5) * cell - box / 2;
+  const targetY = (target[0] + 0.5) * cell - box / 2;
 
   const mounted = useSharedValue(false);
   useEffect(() => {
@@ -66,7 +67,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     tx.value = withTiming(targetX, { duration });
     ty.value = withTiming(targetY, { duration });
     lift.value = withSequence(
-      withTiming(-cell * 0.22, { duration: duration / 2 }),
+      withTiming(-cell * 0.2, { duration: duration / 2 }),
       withTiming(0, { duration: duration / 2 }),
     );
   }, [targetX, targetY, duration, cell, tx, ty, lift, mounted]);
@@ -97,7 +98,6 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
 
   if (!token) return null;
   const color = token.color;
-  const offset = (box - pin) / 2;
 
   return (
     <AnimatedPressable
@@ -111,6 +111,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           top: 0,
           width: box,
           height: box,
+          alignItems: 'center',
+          justifyContent: 'center',
           shadowColor: '#000',
           shadowOpacity: 0.4,
           shadowRadius: 3,
@@ -123,9 +125,6 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
       {/* Teardrop pin: square with one sharp corner, rotated so the tip points down. */}
       <View
         style={{
-          position: 'absolute',
-          left: offset,
-          top: offset * 0.4,
           width: pin,
           height: pin,
           backgroundColor: PLAYER_HEX[color],
