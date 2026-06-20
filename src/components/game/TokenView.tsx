@@ -1,5 +1,6 @@
 import { memo, useEffect } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -28,10 +29,10 @@ interface TokenViewProps {
 }
 
 /**
- * A single animated, glossy map-pin token. Its square bounding box is centred
- * exactly on the target cell (or yard slot) and the pin is flex-centred inside
- * it, so the token always sits precisely on its grid position. Subscribes only
- * to its own token + movable flag; movement is a Reanimated UI-thread glide.
+ * A single animated map-pin token: a round head with a pointed bottom, taller
+ * than it is wide so the head sits above the cell's circle while the pin stays
+ * centred on its cell/yard slot. Subscribes only to its own token + movable
+ * flag; movement is a Reanimated UI-thread glide.
  */
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
@@ -39,8 +40,11 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const box = cell * 0.82; // square bounding box, centred on the cell
-  const pin = box * 0.82; // teardrop size
+  // Pin geometry — taller than wide so the head clears the circle.
+  const W = cell * 0.64;
+  const H = cell * 0.96;
+  const rH = W / 2; // head radius
+
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -52,9 +56,9 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   } else {
     target = coordForPosition(token.color, token.position);
   }
-  // Centre the box on the cell: top-left = cell-centre − box/2.
-  const targetX = (target[1] + 0.5) * cell - box / 2;
-  const targetY = (target[0] + 0.5) * cell - box / 2;
+  // Centre the pin box on the cell.
+  const targetX = (target[1] + 0.5) * cell - W / 2;
+  const targetY = (target[0] + 0.5) * cell - H / 2;
 
   const mounted = useSharedValue(false);
   useEffect(() => {
@@ -99,70 +103,46 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   if (!token) return null;
   const color = token.color;
 
+  // Pin outline: round head (diameter W) tapering to a point at (W/2, H).
+  const pinPath =
+    `M ${W / 2},${H} ` +
+    `C ${W * 0.06},${H * 0.6} 0,${rH + W * 0.12} 0,${rH} ` +
+    `A ${rH},${rH} 0 1 1 ${W},${rH} ` +
+    `C ${W},${rH + W * 0.12} ${W * 0.94},${H * 0.6} ${W / 2},${H} Z`;
+
   return (
     <AnimatedPressable
       onPress={() => onPress(tokenId)}
       disabled={!movable}
-      hitSlop={6}
+      hitSlop={8}
       style={[
         {
           position: 'absolute',
           left: 0,
           top: 0,
-          width: box,
-          height: box,
-          alignItems: 'center',
-          justifyContent: 'center',
+          width: W,
+          height: H,
           shadowColor: '#000',
-          shadowOpacity: 0.4,
-          shadowRadius: 3,
+          shadowOpacity: 0.35,
+          shadowRadius: 2.5,
           shadowOffset: { width: 0, height: 2 },
           elevation: 6,
         },
         style,
       ]}
     >
-      {/* Teardrop pin: square with one sharp corner, rotated so the tip points down. */}
-      <View
-        style={{
-          width: pin,
-          height: pin,
-          backgroundColor: PLAYER_HEX[color],
-          borderTopLeftRadius: pin / 2,
-          borderTopRightRadius: pin / 2,
-          borderBottomLeftRadius: pin / 2,
-          borderBottomRightRadius: pin * 0.12,
-          borderWidth: movable ? 3 : 2,
-          borderColor: movable ? '#FFFFFF' : PLAYER_HEX_DARK[color],
-          transform: [{ rotate: '45deg' }],
-        }}
-      >
-        {/* Inner white eye (rotation-invariant, stays centred). */}
-        <View
-          style={{
-            position: 'absolute',
-            top: pin / 2 - pin * 0.21,
-            left: pin / 2 - pin * 0.21,
-            width: pin * 0.42,
-            height: pin * 0.42,
-            borderRadius: pin * 0.21,
-            backgroundColor: '#FFFFFF',
-          }}
+      <Svg width={W} height={H}>
+        <Path
+          d={pinPath}
+          fill={PLAYER_HEX[color]}
+          stroke={movable ? '#FFFFFF' : PLAYER_HEX_DARK[color]}
+          strokeWidth={movable ? 3 : 2}
         />
+        {/* White eye centred in the head. */}
+        <Circle cx={W / 2} cy={rH} r={W * 0.22} fill="#FFFFFF" />
         {/* Gloss highlight. */}
-        <View
-          style={{
-            position: 'absolute',
-            top: pin * 0.16,
-            left: pin * 0.16,
-            width: pin * 0.3,
-            height: pin * 0.3,
-            borderRadius: pin * 0.15,
-            backgroundColor: PLAYER_HEX_LIGHT[color],
-            opacity: 0.7,
-          }}
-        />
-      </View>
+        <Circle cx={W * 0.36} cy={rH * 0.72} r={W * 0.12} fill={PLAYER_HEX_LIGHT[color]} />
+      </Svg>
     </AnimatedPressable>
   );
 }
