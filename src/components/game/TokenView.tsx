@@ -38,8 +38,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const box = cell * 0.82; // square bounding box, centred on the cell
-  const pin = cell * 0.6; // teardrop side (its diagonal ≈ 0.85 cell)
+  const box = cell * 0.96; // square bounding box, centred on the cell
+  const pin = cell * 0.72; // teardrop side (its diagonal ≈ 1.0 cell)
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -130,7 +130,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           borderTopLeftRadius: pin / 2,
           borderTopRightRadius: pin / 2,
           borderBottomLeftRadius: pin / 2,
-          borderBottomRightRadius: pin * 0.12,
+          borderBottomRightRadius: pin * 0.24,
           borderWidth: movable ? 3 : 2.5,
           borderColor: movable ? '#F59E0B' : '#FFFFFF',
           transform: [{ rotate: '45deg' }],

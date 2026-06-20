@@ -55,13 +55,16 @@ for (const col of COLORS) for (let i=0;i<4;i++) tokens.push({col, base:true, slo
 const place = [['red',0],['red',8],['red',54],['green',0],['yellow',0],['blue',0],['blue',13]];
 place.forEach(([col,pos],k)=>{ const t = tokens.find(t=>t.col===col && t.base); if(t){t.base=false; t.pos=pos;} });
 
-const D = C*0.74, R = D/2;
+const p = C*0.72, half = p/2, rB = p*0.24; // teardrop side, sharp-corner radius
+const tear = `M ${half},0 L ${p-half},0 A ${half},${half} 0 0 1 ${p},${half} L ${p},${p-rB} A ${rB},${rB} 0 0 1 ${p-rB},${p} L ${half},${p} A ${half},${half} 0 0 1 0,${p-half} L 0,${half} A ${half},${half} 0 0 1 ${half},0 Z`;
 for (const t of tokens) {
   const [r,c] = t.base ? SLOTS[t.col][t.slot] : coord(t.col, t.pos);
   const x = cx(c), y = cx(r);
-  s += `<circle cx="${x}" cy="${y}" r="${R-1}" fill="#fff" stroke="#334155" stroke-width="2"/>`;
-  s += `<circle cx="${x}" cy="${y}" r="${R*0.74}" fill="${HEX[t.col]}"/>`;
-  s += `<circle cx="${x}" cy="${y}" r="2" fill="#000"/>`; // exact centre dot
+  s += `<g transform="translate(${x},${y}) rotate(45) translate(${-half},${-half})">`;
+  s += `<path d="${tear}" fill="${HEX[t.col]}" stroke="#fff" stroke-width="2.5"/>`;
+  s += `<circle cx="${half}" cy="${half}" r="${p*0.2}" fill="#fff"/>`;
+  s += `</g>`;
+  s += `<circle cx="${x}" cy="${y}" r="2" fill="#000"/>`; // exact cell-centre dot
 }
 s += `</svg>`;
 
