@@ -13,6 +13,7 @@
     "expo-dev-client": "~56.0.20",
     "expo-haptics": "~56.0.3",
     "expo-linear-gradient": "~56.0.4",
+    "expo-splash-screen": "~56.0.10",
     "expo-status-bar": "~56.0.4",
     "nativewind": "^4.2.5",
     "react": "19.2.3",

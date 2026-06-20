@@ -13,7 +13,7 @@
     "android": {
       "package": "com.mohsinibn.ludo",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -27,6 +27,20 @@
       "eas": {
         "projectId": "70d4df71-3385-40e1-8d17-5db55cf28cf5"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 320,
+          "resizeMode": "contain",
+          "backgroundColor": "#0E5A3A",
+          "dark": {
+            "backgroundColor": "#083D27"
+          }
+        }
+      ]
+    ]
   }
 }
