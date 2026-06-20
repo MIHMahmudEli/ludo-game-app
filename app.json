@@ -8,10 +8,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mihmahmudeli.ludo"
+      "bundleIdentifier": "com.mohsinibn.ludo"
     },
     "android": {
-      "package": "com.mihmahmudeli.ludo",
+      "package": "com.mohsinibn.ludo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
