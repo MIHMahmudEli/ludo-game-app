@@ -21,7 +21,7 @@ import {
 } from '@/store';
 import { Dice } from './Dice';
 
-export const DICE_BOX_SIZE = 92;
+export const DICE_BOX_SIZE = 70;
 
 interface DiceBoxProps {
   color: PlayerColor;
@@ -123,7 +123,7 @@ export function DiceBox({ color, onRoll }: DiceBoxProps) {
           color={color}
           disabled={!canRoll}
           onPress={onRoll}
-          size={48}
+          size={38}
         />
         <Text style={{ fontSize: 11, fontWeight: '800', color: PLAYER_HEX[color] }}>
           {homeCount}/4

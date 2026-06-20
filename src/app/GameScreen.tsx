@@ -8,8 +8,9 @@ import { useHasGame, useMatchStore, usePlayers } from '@/store';
 import { PLAYER_COLORS, type PlayerColor } from '@/types';
 import type { RootScreenProps } from '@/navigation';
 
-// How far each box is pushed outside the board (overlaps the edge slightly).
-const OUT = DICE_BOX_SIZE - 8;
+// Push each box fully outside the board with a small gap from the edge.
+const GAP = 8;
+const OUT = DICE_BOX_SIZE + GAP;
 
 /** Attach each colour's box to its matching board corner. */
 const CORNER: Record<PlayerColor, ViewStyle> = {
