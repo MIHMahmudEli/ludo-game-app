@@ -1,12 +1,9 @@
 import { memo } from 'react';
 import Svg, {
   Circle,
-  Defs,
   G,
-  LinearGradient,
   Polygon,
   Rect,
-  Stop,
   Text as SvgText,
 } from 'react-native-svg';
 import {
@@ -17,8 +14,6 @@ import {
   HOME_COLUMN_COORDS,
   PLAYER_HEX,
   PLAYER_HEX_DARK,
-  PLAYER_HEX_LIGHT,
-  PLAYER_HEX_SOFT,
   RING_COORDS,
   SAFE_RING_INDICES,
 } from '@/constants';
@@ -33,14 +28,38 @@ const START_INDEX_TO_COLOR = new Map<number, PlayerColor>(
   (Object.entries(ENTRY_INDEX) as [PlayerColor, number][]).map(([c, i]) => [i, c]),
 );
 
+/** Entry-arrow cell + direction for each colour's home path. */
+const ARROWS: Record<PlayerColor, { r: number; c: number; dir: 'up' | 'down' | 'left' | 'right' }> = {
+  red: { r: 7, c: 0, dir: 'right' },
+  green: { r: 0, c: 7, dir: 'down' },
+  yellow: { r: 7, c: 14, dir: 'left' },
+  blue: { r: 14, c: 7, dir: 'up' },
+};
+
+function arrowPoints(r: number, c: number, dir: string, cell: number): string {
+  const x = c * cell;
+  const y = r * cell;
+  const u = cell;
+  const tri =
+    dir === 'right'
+      ? [[0.2, 0.25], [0.2, 0.75], [0.78, 0.5]]
+      : dir === 'left'
+        ? [[0.8, 0.25], [0.8, 0.75], [0.22, 0.5]]
+        : dir === 'down'
+          ? [[0.25, 0.2], [0.75, 0.2], [0.5, 0.78]]
+          : [[0.25, 0.8], [0.75, 0.8], [0.5, 0.22]];
+  return tri.map(([dx, dy]) => `${x + dx! * u},${y + dy! * u}`).join(' ');
+}
+
 /**
- * Static, glossy SVG board (original gradient art). Depends only on `boardSize`
- * + colour scheme, so it is memoised and never re-renders while tokens move.
+ * Static, flat "classic" SVG board matching the reference art: solid colour
+ * quadrants with white token panels, a white grid track, solid home paths, a
+ * centre pinwheel, entry arrows and safe-cell stars. Memoised on size + scheme,
+ * so it never re-renders while tokens move.
  */
 function BoardBackgroundComponent({ boardSize, isDark }: BoardBackgroundProps) {
   const cell = boardSize / 15;
   const board = isDark ? BOARD_HEX.dark : BOARD_HEX.light;
-  const radius = cell * 0.16;
 
   const left = 6 * cell;
   const right = 9 * cell;
@@ -58,27 +77,7 @@ function BoardBackgroundComponent({ boardSize, isDark }: BoardBackgroundProps) {
 
   return (
     <Svg width={boardSize} height={boardSize}>
-      <Defs>
-        {/* Subtle vertical sheen on the board surface. */}
-        <LinearGradient id="boardBg" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={board.cell} />
-          <Stop offset="1" stopColor={board.background} />
-        </LinearGradient>
-        {PLAYER_COLORS.map((color) => (
-          <LinearGradient key={`qg-${color}`} id={`q-${color}`} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={PLAYER_HEX_LIGHT[color]} />
-            <Stop offset="1" stopColor={PLAYER_HEX[color]} />
-          </LinearGradient>
-        ))}
-        {PLAYER_COLORS.map((color) => (
-          <LinearGradient key={`tg-${color}`} id={`t-${color}`} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={PLAYER_HEX_LIGHT[color]} />
-            <Stop offset="1" stopColor={PLAYER_HEX_DARK[color]} />
-          </LinearGradient>
-        ))}
-      </Defs>
-
-      <Rect x={0} y={0} width={boardSize} height={boardSize} fill="url(#boardBg)" />
+      <Rect x={0} y={0} width={boardSize} height={boardSize} fill={board.background} />
 
       {/* Yards */}
       {PLAYER_COLORS.map((color) => {
@@ -90,27 +89,25 @@ function BoardBackgroundComponent({ boardSize, isDark }: BoardBackgroundProps) {
               y={q.row * cell}
               width={q.size * cell}
               height={q.size * cell}
-              rx={cell * 0.45}
-              fill={`url(#q-${color})`}
+              fill={PLAYER_HEX[color]}
             />
             <Rect
-              x={(q.col + 0.9) * cell}
-              y={(q.row + 0.9) * cell}
-              width={(q.size - 1.8) * cell}
-              height={(q.size - 1.8) * cell}
-              rx={cell * 0.3}
+              x={(q.col + 1) * cell}
+              y={(q.row + 1) * cell}
+              width={(q.size - 2) * cell}
+              height={(q.size - 2) * cell}
+              rx={cell * 0.18}
               fill={board.cell}
-              opacity={0.96}
             />
             {BASE_SLOT_COORDS[color].map(([r, c], i) => (
               <Circle
                 key={`slot-${color}-${i}`}
                 cx={(c + 0.5) * cell}
                 cy={(r + 0.5) * cell}
-                r={cell * 0.36}
-                fill={PLAYER_HEX_SOFT[color]}
+                r={cell * 0.38}
+                fill="none"
                 stroke={PLAYER_HEX[color]}
-                strokeWidth={2}
+                strokeWidth={2.5}
               />
             ))}
           </G>
@@ -123,12 +120,11 @@ function BoardBackgroundComponent({ boardSize, isDark }: BoardBackgroundProps) {
         return (
           <Rect
             key={`ring-${i}`}
-            x={c * cell + 0.5}
-            y={r * cell + 0.5}
-            width={cell - 1}
-            height={cell - 1}
-            rx={radius}
-            fill={startColor ? `url(#q-${startColor})` : board.cell}
+            x={c * cell}
+            y={r * cell}
+            width={cell}
+            height={cell}
+            fill={startColor ? PLAYER_HEX[startColor] : board.cell}
             stroke={board.grid}
             strokeWidth={1}
           />
@@ -140,28 +136,39 @@ function BoardBackgroundComponent({ boardSize, isDark }: BoardBackgroundProps) {
         HOME_COLUMN_COORDS[color].map(([r, c], i) => (
           <Rect
             key={`home-${color}-${i}`}
-            x={c * cell + 0.5}
-            y={r * cell + 0.5}
-            width={cell - 1}
-            height={cell - 1}
-            rx={radius}
-            fill={`url(#q-${color})`}
+            x={c * cell}
+            y={r * cell}
+            width={cell}
+            height={cell}
+            fill={PLAYER_HEX[color]}
             stroke={board.grid}
             strokeWidth={1}
           />
         )),
       )}
 
-      {/* Centre home triangles (glossy gradient) */}
+      {/* Centre home triangles */}
       {PLAYER_COLORS.map((color) => (
         <Polygon
           key={`tri-${color}`}
           points={trianglePoints[color]}
-          fill={`url(#t-${color})`}
+          fill={PLAYER_HEX[color]}
           stroke={board.grid}
           strokeWidth={1}
         />
       ))}
+
+      {/* Entry arrows */}
+      {PLAYER_COLORS.map((color) => {
+        const a = ARROWS[color];
+        return (
+          <Polygon
+            key={`arrow-${color}`}
+            points={arrowPoints(a.r, a.c, a.dir, cell)}
+            fill={PLAYER_HEX_DARK[color]}
+          />
+        );
+      })}
 
       {/* Safe-cell stars */}
       {SAFE_RING_INDICES.map((i) => {

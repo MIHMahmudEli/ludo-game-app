@@ -5,35 +5,36 @@ import type { PlayerColor } from '@/types';
  * colours declared in `tailwind.config.js` so SVG fills (which can't use
  * className) and Tailwind classes never drift apart.
  */
+// Classic bright Ludo palette (matches the reference board art).
 export const PLAYER_HEX: Record<PlayerColor, string> = {
-  red: '#EF4444',
-  green: '#22C55E',
-  yellow: '#F59E0B',
-  blue: '#3B82F6',
+  red: '#E53935',
+  green: '#2FA84F',
+  yellow: '#F4B400',
+  blue: '#2A7FE0',
 };
 
 /** Slightly darker shade used for token rims / base borders. */
 export const PLAYER_HEX_DARK: Record<PlayerColor, string> = {
-  red: '#B91C1C',
-  green: '#15803D',
-  yellow: '#B45309',
-  blue: '#1D4ED8',
+  red: '#B71C1C',
+  green: '#1E7E37',
+  yellow: '#D69600',
+  blue: '#1B5FB5',
 };
 
-/** Lighter tint used for the top of glossy 3D token/triangle gradients. */
+/** Lighter tint used for the top of glossy 3D token highlights. */
 export const PLAYER_HEX_LIGHT: Record<PlayerColor, string> = {
-  red: '#FB7185',
-  green: '#4ADE80',
-  yellow: '#FBBF24',
-  blue: '#60A5FA',
+  red: '#EF5350',
+  green: '#54C46E',
+  yellow: '#FFC83D',
+  blue: '#4F9BEE',
 };
 
 /** Soft tint used to fill each colour's home quadrant. */
 export const PLAYER_HEX_SOFT: Record<PlayerColor, string> = {
-  red: '#FCA5A5',
-  green: '#86EFAC',
-  yellow: '#FCD34D',
-  blue: '#93C5FD',
+  red: '#FBD2D1',
+  green: '#C6EBCF',
+  yellow: '#FCE9B8',
+  blue: '#C2DDF7',
 };
 
 export const BOARD_HEX = {

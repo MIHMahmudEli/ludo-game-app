@@ -1,6 +1,5 @@
 import { memo, useEffect } from 'react';
 import { Pressable, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -29,9 +28,9 @@ interface TokenViewProps {
 }
 
 /**
- * A single animated, glossy 3D token (original art — gradient + highlight, not
- * Ludo King's pawn sprite). Subscribes only to its own token + movable flag, so
- * it re-renders in isolation; movement is a Reanimated UI-thread glide.
+ * A single animated, glossy map-pin token (the classic Ludo King teardrop
+ * shape, original art). Subscribes only to its own token + movable flag, so it
+ * re-renders in isolation; movement is a Reanimated UI-thread glide with a hop.
  */
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
@@ -39,7 +38,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const size = cell * 0.72;
+  const box = cell * 0.84; // bounding box
+  const pin = box * 0.82; // teardrop size
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -52,11 +52,9 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     target = coordForPosition(token.color, token.position);
   }
   const jitter = token ? token.index * 1.5 : 0;
-  const targetX = (target[1] + 0.5) * cell - size / 2 + jitter;
-  const targetY = (target[0] + 0.5) * cell - size / 2 + jitter;
+  const targetX = (target[1] + 0.5) * cell - box / 2 + jitter;
+  const targetY = (target[0] + 0.5) * cell - box / 2 + jitter;
 
-  // Initialise without animating on first mount, then glide on changes with a
-  // small "hop" (lift) so movement feels like a physical piece being placed.
   const mounted = useSharedValue(false);
   useEffect(() => {
     if (!mounted.value) {
@@ -99,6 +97,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
 
   if (!token) return null;
   const color = token.color;
+  const offset = (box - pin) / 2;
 
   return (
     <AnimatedPressable
@@ -110,9 +109,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           position: 'absolute',
           left: 0,
           top: 0,
-          width: size,
-          height: size,
-          // The drop shadow gives the token a raised, tactile look.
+          width: box,
+          height: box,
           shadowColor: '#000',
           shadowOpacity: 0.4,
           shadowRadius: 3,
@@ -122,46 +120,50 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
         style,
       ]}
     >
-      <LinearGradient
-        colors={[PLAYER_HEX_LIGHT[color], PLAYER_HEX[color], PLAYER_HEX_DARK[color]]}
-        start={{ x: 0.25, y: 0 }}
-        end={{ x: 0.8, y: 1 }}
+      {/* Teardrop pin: square with one sharp corner, rotated so the tip points down. */}
+      <View
         style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          position: 'absolute',
+          left: offset,
+          top: offset * 0.4,
+          width: pin,
+          height: pin,
+          backgroundColor: PLAYER_HEX[color],
+          borderTopLeftRadius: pin / 2,
+          borderTopRightRadius: pin / 2,
+          borderBottomLeftRadius: pin / 2,
+          borderBottomRightRadius: pin * 0.12,
           borderWidth: movable ? 3 : 2,
           borderColor: movable ? '#FFFFFF' : PLAYER_HEX_DARK[color],
-          overflow: 'hidden',
+          transform: [{ rotate: '45deg' }],
         }}
       >
-        {/* Glossy highlight near the top-left for a 3D marble look. */}
+        {/* Inner white eye (rotation-invariant, stays centred). */}
         <View
           style={{
             position: 'absolute',
-            top: size * 0.12,
-            left: size * 0.18,
-            width: size * 0.5,
-            height: size * 0.3,
-            borderRadius: size * 0.25,
+            top: pin / 2 - pin * 0.21,
+            left: pin / 2 - pin * 0.21,
+            width: pin * 0.42,
+            height: pin * 0.42,
+            borderRadius: pin * 0.21,
             backgroundColor: '#FFFFFF',
-            opacity: 0.45,
           }}
         />
-        {/* Center pip. */}
+        {/* Gloss highlight. */}
         <View
           style={{
             position: 'absolute',
-            top: size * 0.42,
-            left: size * 0.42,
-            width: size * 0.16,
-            height: size * 0.16,
-            borderRadius: size * 0.08,
-            backgroundColor: '#FFFFFF',
-            opacity: 0.85,
+            top: pin * 0.16,
+            left: pin * 0.16,
+            width: pin * 0.3,
+            height: pin * 0.3,
+            borderRadius: pin * 0.15,
+            backgroundColor: PLAYER_HEX_LIGHT[color],
+            opacity: 0.7,
           }}
         />
-      </LinearGradient>
+      </View>
     </AnimatedPressable>
   );
 }

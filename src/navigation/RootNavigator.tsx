@@ -8,8 +8,9 @@ import { useColorScheme } from 'nativewind';
 
 import {
   GameScreen,
-  GameSetupScreen,
   HomeScreen,
+  ModeSetupScreen,
+  OnlineLobbyScreen,
   SettingsScreen,
 } from '@/app';
 import type { RootStackParamList } from './types';
@@ -32,7 +33,8 @@ export function RootNavigator() {
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="GameSetup" component={GameSetupScreen} />
+        <Stack.Screen name="ModeSetup" component={ModeSetupScreen} />
+        <Stack.Screen name="Online" component={OnlineLobbyScreen} />
         <Stack.Screen name="Game" component={GameScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>

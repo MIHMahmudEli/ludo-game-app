@@ -1,4 +1,5 @@
 export { HomeScreen } from './HomeScreen';
-export { GameSetupScreen } from './GameSetupScreen';
+export { ModeSetupScreen } from './ModeSetupScreen';
+export { OnlineLobbyScreen } from './OnlineLobbyScreen';
 export { GameScreen } from './GameScreen';
 export { SettingsScreen } from './SettingsScreen';
