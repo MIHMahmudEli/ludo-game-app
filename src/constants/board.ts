@@ -73,17 +73,6 @@ export const BASE_QUADRANT: Record<
 };
 
 /**
- * Position (in grid-cell units) of each player's dice — tucked into the outer
- * corner of their home quadrant (the board's four corners).
- */
-export const HOME_DICE_CENTER: Record<PlayerColor, { x: number; y: number }> = {
-  red: { x: 1.45, y: 1.45 }, // top-left
-  green: { x: 13.55, y: 1.45 }, // top-right
-  yellow: { x: 13.55, y: 13.55 }, // bottom-right
-  blue: { x: 1.45, y: 13.55 }, // bottom-left
-};
-
-/**
  * Project a colour-relative position onto a global ring index.
  * Returns `null` when the position is inside the home column (off the ring).
  */

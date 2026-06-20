@@ -14,9 +14,9 @@ interface BoardProps {
 }
 
 /**
- * Board = the static SVG background + live, absolutely-positioned pin tokens,
- * inside a thin rounded frame (classic flat look). Subscribes only to the
- * (stable) token-id list, so the container virtually never re-renders.
+ * Board = the clipped square play area (static SVG + live pin tokens) wrapped in
+ * a non-clipping container so each player's dice can overhang the four outer
+ * corners. Subscribes only to the (stable) token-id list.
  */
 export function Board({ onTokenPress, onRoll }: BoardProps) {
   const { boardSize, cell } = useResponsiveBoard();
@@ -24,29 +24,39 @@ export function Board({ onTokenPress, onRoll }: BoardProps) {
   const tokenIds = useTokenIds();
 
   return (
-    <View
-      style={{
-        width: boardSize,
-        height: boardSize,
-        borderWidth: 3,
-        borderColor: isDark ? '#334155' : '#0F172A',
-        borderRadius: cell * 0.5,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.25,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 5 },
-        elevation: 8,
-      }}
-    >
-      <BoardBackground boardSize={boardSize} isDark={isDark} />
-      <HomeGlow cell={cell} />
-      {tokenIds.map((id) => (
-        <TokenView key={id} tokenId={id} cell={cell} onPress={onTokenPress} />
-      ))}
-      {/* Dice sit in the board corners, above tokens so they stay tappable. */}
+    <View style={{ width: boardSize, height: boardSize }}>
+      {/* Clipped, rounded play area. */}
+      <View
+        style={{
+          width: boardSize,
+          height: boardSize,
+          borderWidth: 3,
+          borderColor: isDark ? '#334155' : '#0F172A',
+          borderRadius: cell * 0.5,
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOpacity: 0.25,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 5 },
+          elevation: 8,
+        }}
+      >
+        <BoardBackground boardSize={boardSize} isDark={isDark} />
+        <HomeGlow cell={cell} />
+        {tokenIds.map((id) => (
+          <TokenView key={id} tokenId={id} cell={cell} onPress={onTokenPress} />
+        ))}
+      </View>
+
+      {/* Dice overhang the outer corners (outside the clipped area). */}
       {PLAYER_COLORS.map((color) => (
-        <BoardDice key={color} color={color} cell={cell} onRoll={onRoll} />
+        <BoardDice
+          key={color}
+          color={color}
+          cell={cell}
+          boardSize={boardSize}
+          onRoll={onRoll}
+        />
       ))}
     </View>
   );

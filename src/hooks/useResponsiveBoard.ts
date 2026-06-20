@@ -8,9 +8,9 @@ import { BOARD_GRID_SIZE } from '@/constants';
  */
 export function useResponsiveBoard() {
   const { width, height } = useWindowDimensions();
-  // Leave room for the header, player panels and dice tray.
-  const available = Math.min(width - 24, height - 300);
-  const boardSize = Math.max(280, Math.min(available, 560));
+  // Leave room for the header and for dice that overhang the board corners.
+  const budget = Math.min(width - 16, height - 260);
+  const boardSize = Math.max(240, Math.min(budget * 0.86, 520));
   const cell = boardSize / BOARD_GRID_SIZE;
   return { boardSize, cell };
 }

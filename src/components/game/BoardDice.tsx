@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import type { PlayerColor } from '@/types';
-import { HOME_DICE_CENTER, PLAYER_HEX } from '@/constants';
+import { PLAYER_HEX } from '@/constants';
 import {
   useDice,
   useInputLocked,
@@ -22,15 +22,24 @@ import { Dice } from './Dice';
 interface BoardDiceProps {
   color: PlayerColor;
   cell: number;
+  boardSize: number;
   onRoll: () => void;
 }
+
+/** Which board corner each colour's dice hangs off (fraction of board size). */
+const CORNER: Record<PlayerColor, { fx: 0 | 1; fy: 0 | 1 }> = {
+  red: { fx: 0, fy: 0 }, // top-left
+  green: { fx: 1, fy: 0 }, // top-right
+  yellow: { fx: 1, fy: 1 }, // bottom-right
+  blue: { fx: 0, fy: 1 }, // bottom-left
+};
 
 /**
  * A player's dice, rendered in the middle of their home base (the board's
  * corner). Glows and pulses on their turn, dims otherwise, and is interactive
  * only for the active human — giving a text-free "whose turn" cue in place.
  */
-export function BoardDice({ color, cell, onRoll }: BoardDiceProps) {
+export function BoardDice({ color, cell, boardSize, onRoll }: BoardDiceProps) {
   const turn = useTurn();
   const players = usePlayers();
   const dice = useDice();
@@ -67,10 +76,11 @@ export function BoardDice({ color, cell, onRoll }: BoardDiceProps) {
 
   if (!player) return null;
 
-  const size = cell * 1.7;
-  const center = HOME_DICE_CENTER[color];
-  const left = center.x * cell - size / 2;
-  const top = center.y * cell - size / 2;
+  const size = cell * 2.1;
+  const corner = CORNER[color];
+  // Centre the dice on the board corner so it sits just outside it.
+  const left = corner.fx * boardSize - size / 2;
+  const top = corner.fy * boardSize - size / 2;
 
   return (
     <View
