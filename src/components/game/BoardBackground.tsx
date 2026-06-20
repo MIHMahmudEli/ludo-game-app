@@ -104,7 +104,7 @@ function BoardBackgroundComponent({ boardSize, isDark }: BoardBackgroundProps) {
                 key={`slot-${color}-${i}`}
                 cx={(c + 0.5) * cell}
                 cy={(r + 0.5) * cell}
-                r={cell * 0.38}
+                r={cell * 0.32}
                 fill="none"
                 stroke={PLAYER_HEX[color]}
                 strokeWidth={2.5}
