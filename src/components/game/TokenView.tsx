@@ -1,6 +1,5 @@
 import { memo, useEffect } from 'react';
-import { Pressable } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import { Pressable, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -9,7 +8,13 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { baseSlotCoord, coordForPosition, PLAYER_HEX, TIMINGS } from '@/constants';
+import {
+  baseSlotCoord,
+  coordForPosition,
+  PLAYER_HEX,
+  PLAYER_HEX_LIGHT,
+  TIMINGS,
+} from '@/constants';
 import { useIsTokenMovable, useToken } from '@/store';
 import { ANIMATION_SPEED_FACTOR, useSettingsStore } from '@/store';
 
@@ -22,10 +27,10 @@ interface TokenViewProps {
 }
 
 /**
- * A single animated token disc: a shared white outer ring (same for every
- * player) with the player's colour on the inside, centred exactly on its
- * cell/yard circle. Small enough never to clip. Subscribes only to its own
- * token + movable flag; movement is a Reanimated UI-thread glide.
+ * A single animated flat teardrop-pin token: a rounded body with one pointed
+ * corner, a shared white outer border (gold while it's a legal move) and the
+ * player's colour inside. The bounding box is centred on the cell, and the pin
+ * is flex-centred in it, so the token stays precisely on its cell/yard circle.
  */
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
@@ -33,11 +38,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const pad = 4; // breathing room so the stroke never clips
-  const D = cell * 0.74; // token diameter
-  const svg = D + pad * 2;
-  const c = svg / 2; // centre of the svg box
-  const R = D / 2;
+  const box = cell * 0.82; // square bounding box, centred on the cell
+  const pin = cell * 0.6; // teardrop side (its diagonal ≈ 0.85 cell)
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -50,9 +52,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   } else {
     target = coordForPosition(token.color, token.position);
   }
-  // Centre the svg box on the cell.
-  const targetX = (target[1] + 0.5) * cell - svg / 2;
-  const targetY = (target[0] + 0.5) * cell - svg / 2;
+  const targetX = (target[1] + 0.5) * cell - box / 2;
+  const targetY = (target[0] + 0.5) * cell - box / 2;
 
   const mounted = useSharedValue(false);
   useEffect(() => {
@@ -74,7 +75,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     if (movable) {
       pulse.value = withRepeat(
         withSequence(
-          withTiming(1.18, { duration: 380 }),
+          withTiming(1.16, { duration: 380 }),
           withTiming(1, { duration: 380 }),
         ),
         -1,
@@ -107,32 +108,60 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           position: 'absolute',
           left: 0,
           top: 0,
-          width: svg,
-          height: svg,
+          width: box,
+          height: box,
+          alignItems: 'center',
+          justifyContent: 'center',
           shadowColor: '#000',
-          shadowOpacity: 0.35,
-          shadowRadius: 2.5,
+          shadowOpacity: 0.4,
+          shadowRadius: 3,
           shadowOffset: { width: 0, height: 2 },
           elevation: 6,
         },
         style,
       ]}
     >
-      <Svg width={svg} height={svg}>
-        {/* Shared white outer ring (same for all players) + rim. */}
-        <Circle
-          cx={c}
-          cy={c}
-          r={R - 1}
-          fill="#FFFFFF"
-          stroke={movable ? '#F59E0B' : '#334155'}
-          strokeWidth={movable ? 3 : 2}
+      {/* Teardrop: square with one sharp corner, rotated so the tip points down. */}
+      <View
+        style={{
+          width: pin,
+          height: pin,
+          backgroundColor: PLAYER_HEX[color],
+          borderTopLeftRadius: pin / 2,
+          borderTopRightRadius: pin / 2,
+          borderBottomLeftRadius: pin / 2,
+          borderBottomRightRadius: pin * 0.12,
+          borderWidth: movable ? 3 : 2.5,
+          borderColor: movable ? '#F59E0B' : '#FFFFFF',
+          transform: [{ rotate: '45deg' }],
+        }}
+      >
+        {/* White eye, centred (rotation-invariant). */}
+        <View
+          style={{
+            position: 'absolute',
+            top: pin / 2 - pin * 0.2,
+            left: pin / 2 - pin * 0.2,
+            width: pin * 0.4,
+            height: pin * 0.4,
+            borderRadius: pin * 0.2,
+            backgroundColor: '#FFFFFF',
+          }}
         />
-        {/* Inner disc in the player's colour. */}
-        <Circle cx={c} cy={c} r={R * 0.74} fill={PLAYER_HEX[color]} />
-        {/* Gloss highlight. */}
-        <Circle cx={c - R * 0.26} cy={c - R * 0.26} r={R * 0.2} fill="#FFFFFF" opacity={0.5} />
-      </Svg>
+        {/* Gloss highlight on the head. */}
+        <View
+          style={{
+            position: 'absolute',
+            top: pin * 0.14,
+            left: pin * 0.14,
+            width: pin * 0.28,
+            height: pin * 0.28,
+            borderRadius: pin * 0.14,
+            backgroundColor: PLAYER_HEX_LIGHT[color],
+            opacity: 0.75,
+          }}
+        />
+      </View>
     </AnimatedPressable>
   );
 }
