@@ -73,6 +73,17 @@ export const BASE_QUADRANT: Record<
 };
 
 /**
+ * Pixel-centre (in grid-cell units) of each home base — the empty middle of the
+ * four yard slots, where that player's dice is shown inside the board.
+ */
+export const HOME_DICE_CENTER: Record<PlayerColor, { x: number; y: number }> = {
+  red: { x: 3, y: 3 },
+  green: { x: 12, y: 3 },
+  yellow: { x: 12, y: 12 },
+  blue: { x: 3, y: 12 },
+};
+
+/**
  * Project a colour-relative position onto a global ring index.
  * Returns `null` when the position is inside the home column (off the ring).
  */
