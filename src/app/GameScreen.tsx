@@ -1,18 +1,26 @@
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Board, WinnerModal } from '@/components/game';
+import { Board, DICE_BOX_SIZE, DiceBox, WinnerModal } from '@/components/game';
 import { Screen } from '@/components/ui';
 import { useGameController } from '@/hooks';
-import { useHasGame, useMatchStore } from '@/store';
+import { useHasGame, useMatchStore, usePlayers } from '@/store';
+import type { PlayerColor } from '@/types';
 import type { RootScreenProps } from '@/navigation';
 
+/** Box placement matched to each colour's board quadrant. */
+const ROWS: PlayerColor[][] = [
+  ['red', 'green'], // top: left, right
+  ['blue', 'yellow'], // bottom: left, right
+];
+
 /**
- * The match screen. Each seated player rolls from their own dice in the board's
- * corner (their home base), which glows on their turn — no turn text. Holds no
- * game logic; intents come from the controller.
+ * The match screen. Each seated player has a square dice box in their corner
+ * (around the board) that glows on their turn — no turn text. Holds no game
+ * logic; intents come from the controller.
  */
 export function GameScreen({ navigation }: RootScreenProps<'Game'>) {
   const hasGame = useHasGame();
+  const players = usePlayers();
   const restart = useMatchStore((s) => s.restart);
   const quit = useMatchStore((s) => s.quit);
   const { rollDice, handleTokenPress } = useGameController();
@@ -22,10 +30,23 @@ export function GameScreen({ navigation }: RootScreenProps<'Game'>) {
   }, [hasGame, navigation]);
   if (!hasGame) return null;
 
+  const seated = new Set(players.map((p) => p.color));
   const goHome = () => {
     quit();
     navigation.replace('Home');
   };
+
+  const renderRow = (row: PlayerColor[]) => (
+    <View className="flex-row items-center justify-between px-4">
+      {row.map((color) =>
+        seated.has(color) ? (
+          <DiceBox key={color} color={color} onRoll={rollDice} />
+        ) : (
+          <View key={color} style={{ width: DICE_BOX_SIZE }} />
+        ),
+      )}
+    </View>
+  );
 
   return (
     <Screen className="px-3">
@@ -37,9 +58,13 @@ export function GameScreen({ navigation }: RootScreenProps<'Game'>) {
         </Pressable>
       </View>
 
+      {renderRow(ROWS[0]!)}
+
       <View className="flex-1 items-center justify-center">
-        <Board onTokenPress={handleTokenPress} onRoll={rollDice} />
+        <Board onTokenPress={handleTokenPress} />
       </View>
+
+      {renderRow(ROWS[1]!)}
 
       <WinnerModal onPlayAgain={restart} onHome={goHome} />
     </Screen>

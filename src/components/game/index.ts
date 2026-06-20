@@ -1,6 +1,6 @@
 export { Board } from './Board';
 export { BoardBackground } from './BoardBackground';
-export { BoardDice } from './BoardDice';
+export { DiceBox, DICE_BOX_SIZE } from './DiceBox';
 export { HomeGlow } from './HomeGlow';
 export { TokenView } from './TokenView';
 export { Dice } from './Dice';
