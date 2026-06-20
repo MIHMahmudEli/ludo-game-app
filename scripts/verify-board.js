@@ -55,16 +55,13 @@ for (const col of COLORS) for (let i=0;i<4;i++) tokens.push({col, base:true, slo
 const place = [['red',0],['red',8],['red',54],['green',0],['yellow',0],['blue',0],['blue',13]];
 place.forEach(([col,pos],k)=>{ const t = tokens.find(t=>t.col===col && t.base); if(t){t.base=false; t.pos=pos;} });
 
-const W = C*0.64, H = C*0.96, rH = W/2;
-const pin = `M ${W/2},${H} C ${W*0.06},${H*0.6} 0,${rH+W*0.12} 0,${rH} A ${rH},${rH} 0 1 1 ${W},${rH} C ${W},${rH+W*0.12} ${W*0.94},${H*0.6} ${W/2},${H} Z`;
+const D = C*0.74, R = D/2;
 for (const t of tokens) {
   const [r,c] = t.base ? SLOTS[t.col][t.slot] : coord(t.col, t.pos);
-  const x = cx(c) - W/2, y = cx(r) - H/2; // box centred on cell
-  s += `<g transform="translate(${x},${y})">`;
-  s += `<path d="${pin}" fill="${HEX[t.col]}" stroke="#fff" stroke-width="2"/>`;
-  s += `<circle cx="${W/2}" cy="${rH}" r="${W*0.22}" fill="#fff"/>`;
-  s += `</g>`;
-  s += `<circle cx="${cx(c)}" cy="${cx(r)}" r="2" fill="#000"/>`; // cell centre dot
+  const x = cx(c), y = cx(r);
+  s += `<circle cx="${x}" cy="${y}" r="${R-1}" fill="#fff" stroke="#334155" stroke-width="2"/>`;
+  s += `<circle cx="${x}" cy="${y}" r="${R*0.74}" fill="${HEX[t.col]}"/>`;
+  s += `<circle cx="${x}" cy="${y}" r="2" fill="#000"/>`; // exact centre dot
 }
 s += `</svg>`;
 

@@ -1,6 +1,6 @@
 import { memo, useEffect } from 'react';
 import { Pressable } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -9,14 +9,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import {
-  baseSlotCoord,
-  coordForPosition,
-  PLAYER_HEX,
-  PLAYER_HEX_DARK,
-  PLAYER_HEX_LIGHT,
-  TIMINGS,
-} from '@/constants';
+import { baseSlotCoord, coordForPosition, PLAYER_HEX, TIMINGS } from '@/constants';
 import { useIsTokenMovable, useToken } from '@/store';
 import { ANIMATION_SPEED_FACTOR, useSettingsStore } from '@/store';
 
@@ -29,10 +22,10 @@ interface TokenViewProps {
 }
 
 /**
- * A single animated map-pin token: a round head with a pointed bottom, taller
- * than it is wide so the head sits above the cell's circle while the pin stays
- * centred on its cell/yard slot. Subscribes only to its own token + movable
- * flag; movement is a Reanimated UI-thread glide.
+ * A single animated token disc: a shared white outer ring (same for every
+ * player) with the player's colour on the inside, centred exactly on its
+ * cell/yard circle. Small enough never to clip. Subscribes only to its own
+ * token + movable flag; movement is a Reanimated UI-thread glide.
  */
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
@@ -40,10 +33,11 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  // Pin geometry — taller than wide so the head clears the circle.
-  const W = cell * 0.64;
-  const H = cell * 0.96;
-  const rH = W / 2; // head radius
+  const pad = 4; // breathing room so the stroke never clips
+  const D = cell * 0.74; // token diameter
+  const svg = D + pad * 2;
+  const c = svg / 2; // centre of the svg box
+  const R = D / 2;
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -56,9 +50,9 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   } else {
     target = coordForPosition(token.color, token.position);
   }
-  // Centre the pin box on the cell.
-  const targetX = (target[1] + 0.5) * cell - W / 2;
-  const targetY = (target[0] + 0.5) * cell - H / 2;
+  // Centre the svg box on the cell.
+  const targetX = (target[1] + 0.5) * cell - svg / 2;
+  const targetY = (target[0] + 0.5) * cell - svg / 2;
 
   const mounted = useSharedValue(false);
   useEffect(() => {
@@ -80,7 +74,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     if (movable) {
       pulse.value = withRepeat(
         withSequence(
-          withTiming(1.16, { duration: 380 }),
+          withTiming(1.18, { duration: 380 }),
           withTiming(1, { duration: 380 }),
         ),
         -1,
@@ -103,13 +97,6 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   if (!token) return null;
   const color = token.color;
 
-  // Pin outline: round head (diameter W) tapering to a point at (W/2, H).
-  const pinPath =
-    `M ${W / 2},${H} ` +
-    `C ${W * 0.06},${H * 0.6} 0,${rH + W * 0.12} 0,${rH} ` +
-    `A ${rH},${rH} 0 1 1 ${W},${rH} ` +
-    `C ${W},${rH + W * 0.12} ${W * 0.94},${H * 0.6} ${W / 2},${H} Z`;
-
   return (
     <AnimatedPressable
       onPress={() => onPress(tokenId)}
@@ -120,8 +107,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           position: 'absolute',
           left: 0,
           top: 0,
-          width: W,
-          height: H,
+          width: svg,
+          height: svg,
           shadowColor: '#000',
           shadowOpacity: 0.35,
           shadowRadius: 2.5,
@@ -131,17 +118,20 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
         style,
       ]}
     >
-      <Svg width={W} height={H}>
-        <Path
-          d={pinPath}
-          fill={PLAYER_HEX[color]}
-          stroke={movable ? '#FFFFFF' : PLAYER_HEX_DARK[color]}
+      <Svg width={svg} height={svg}>
+        {/* Shared white outer ring (same for all players) + rim. */}
+        <Circle
+          cx={c}
+          cy={c}
+          r={R - 1}
+          fill="#FFFFFF"
+          stroke={movable ? '#F59E0B' : '#334155'}
           strokeWidth={movable ? 3 : 2}
         />
-        {/* White eye centred in the head. */}
-        <Circle cx={W / 2} cy={rH} r={W * 0.22} fill="#FFFFFF" />
+        {/* Inner disc in the player's colour. */}
+        <Circle cx={c} cy={c} r={R * 0.74} fill={PLAYER_HEX[color]} />
         {/* Gloss highlight. */}
-        <Circle cx={W * 0.36} cy={rH * 0.72} r={W * 0.12} fill={PLAYER_HEX_LIGHT[color]} />
+        <Circle cx={c - R * 0.26} cy={c - R * 0.26} r={R * 0.2} fill="#FFFFFF" opacity={0.5} />
       </Svg>
     </AnimatedPressable>
   );
