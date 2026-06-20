@@ -52,25 +52,39 @@ RING.forEach(([r,c],i)=>{
 });
 for (const col of COLORS) for (const [r,c] of HOME[col]) s += `<rect x="${c*C}" y="${r*C}" width="${C}" height="${C}" fill="${HEX[col]}" stroke="#C7CDD6"/>`;
 
-// Tokens: all in base, plus a few placed on track/home to check both.
+// Tokens: all in base, plus clusters placed on the track to check spreading.
 const tokens = [];
-for (const col of COLORS) for (let i=0;i<4;i++) tokens.push({col, base:true, slot:i});
-const place = [['red',0],['red',8],['red',54],['green',0],['yellow',0],['blue',0],['blue',13]];
-place.forEach(([col,pos],k)=>{ const t = tokens.find(t=>t.col===col && t.base); if(t){t.base=false; t.pos=pos;} });
+for (const col of COLORS) for (let i=0;i<4;i++) tokens.push({col, base:true, slot:i, id:`${col}-${i}`});
+const place = [['green',5],['green',5],['green',5],['blue',0],['blue',0],['red',8]];
+place.forEach(([col,pos])=>{ const t = tokens.find(t=>t.col===col && t.base); if(t){t.base=false; t.pos=pos;} });
+// Cluster grouping by cell.
+const groups = {};
+for (const t of tokens.filter(t=>!t.base)) { const [r,c]=coord(t.col,t.pos); (groups[`${r}:${c}`] ||= []).push(t); }
+for (const key in groups) groups[key].sort((a,b)=>a.id.localeCompare(b.id));
 
 const PIN = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z';
-const side = C*1.08, k = side/24;
-for (const t of tokens) {
+const side = C*1.08;
+function drawPin(t) {
+  const onBoard = !t.base;
   const [r,c] = t.base ? SLOTS[t.col][t.slot] : coord(t.col, t.pos);
-  const x = cx(c), y = cx(r);
-  // Anchor tip (12,22 in viewBox) at the cell centre.
-  s += `<g transform="translate(${x - side*0.5},${y - side*22/24}) scale(${k})">`;
+  let x = cx(c), y = cx(r), sc = 1;
+  if (onBoard) {
+    const grp = groups[`${r}:${c}`];
+    if (grp.length > 1) {
+      const i = grp.indexOf(t), n = grp.length;
+      const ang = (i/n)*Math.PI*2 - Math.PI/2, rad = C*0.24;
+      x += Math.cos(ang)*rad; y += Math.sin(ang)*rad;
+      sc = n===2?0.82:n===3?0.72:0.64;
+    }
+  }
+  const k = side*sc/24;
+  s += `<g transform="translate(${x - side*sc*0.5},${y - side*sc*22/24}) scale(${k})">`;
   s += `<path d="${PIN}" fill="url(#g-${t.col})" stroke="#fff" stroke-width="1"/>`;
   s += `<circle cx="12" cy="9" r="3.1" fill="#fff"/>`;
   s += `<ellipse cx="9.6" cy="6.4" rx="1.9" ry="2.4" fill="#fff" opacity="0.4"/>`;
   s += `</g>`;
-  s += `<circle cx="${x}" cy="${y}" r="2.5" fill="#000"/>`; // exact cell-centre dot
 }
+for (const t of tokens) drawPin(t);
 s += `</svg>`;
 
 sharp(Buffer.from(s)).png().toFile(path.join(__dirname,'..','assets','_verify.png')).then(()=>console.log('ok'));

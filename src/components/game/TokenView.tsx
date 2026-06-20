@@ -24,7 +24,7 @@ import {
   PLAYER_HEX_LIGHT,
   TIMINGS,
 } from '@/constants';
-import { useIsTokenMovable, useToken } from '@/store';
+import { useIsTokenMovable, useToken, useTokenCluster } from '@/store';
 import { ANIMATION_SPEED_FACTOR, useSettingsStore } from '@/store';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -50,6 +50,7 @@ interface TokenViewProps {
 function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const token = useToken(tokenId);
   const movable = useIsTokenMovable(tokenId);
+  const { index, count } = useTokenCluster(tokenId);
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
@@ -59,6 +60,20 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const ty = useSharedValue(0);
   const pulse = useSharedValue(1);
   const lift = useSharedValue(0);
+  const cscale = useSharedValue(1);
+
+  // When pins stack on a cell, fan the non-active ones out and shrink them so
+  // all are visible; the active/movable pin stays centred at full size.
+  let dx = 0;
+  let dy = 0;
+  let clusterScale = 1;
+  if (count > 1 && !movable) {
+    const radius = cell * 0.24;
+    const angle = (index / count) * Math.PI * 2 - Math.PI / 2;
+    dx = Math.cos(angle) * radius;
+    dy = Math.sin(angle) * radius;
+    clusterScale = count === 2 ? 0.82 : count === 3 ? 0.72 : 0.64;
+  }
 
   let target: readonly [number, number];
   if (!token || token.state === 'base') {
@@ -66,9 +81,9 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   } else {
     target = coordForPosition(token.color, token.position);
   }
-  // Anchor the pin tip on the cell centre.
-  const targetX = (target[1] + 0.5) * cell - size * TIP_FX;
-  const targetY = (target[0] + 0.5) * cell - size * TIP_FY;
+  // Anchor the pin tip on the cell centre (+ cluster fan offset).
+  const targetX = (target[1] + 0.5) * cell - size * TIP_FX + dx;
+  const targetY = (target[0] + 0.5) * cell - size * TIP_FY + dy;
 
   const mounted = useSharedValue(false);
   useEffect(() => {
@@ -102,11 +117,15 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     }
   }, [movable, pulse]);
 
+  useEffect(() => {
+    cscale.value = withTiming(clusterScale, { duration: 200 });
+  }, [clusterScale, cscale]);
+
   const style = useAnimatedStyle(() => ({
     transform: [
       { translateX: tx.value },
       { translateY: ty.value + lift.value },
-      { scale: pulse.value },
+      { scale: pulse.value * cscale.value },
     ],
   }));
 
@@ -126,6 +145,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           top: 0,
           width: size,
           height: size,
+          // Active pin sits above the rest of a cluster.
+          zIndex: movable ? 30 : 10,
           shadowColor: '#000',
           shadowOpacity: 0.35,
           shadowRadius: 3,

@@ -1,7 +1,14 @@
 import { useShallow } from 'zustand/react/shallow';
-import type { PlayerColor } from '@/types';
+import type { PlayerColor, Token } from '@/types';
+import { coordForPosition } from '@/constants';
 import { TurnEngine } from '@/features/ludo-engine';
 import { useMatchStore } from './matchStore';
+
+/** Grid-cell key for an on-board token (base tokens have their own slots). */
+function cellKey(t: Token): string {
+  const [r, c] = coordForPosition(t.color, t.position);
+  return `${r}:${c}`;
+}
 
 /**
  * Selector hooks — the read API of the match store.
@@ -42,6 +49,24 @@ export const useMovableTokenIds = () =>
 
 export const useIsTokenMovable = (id: string) =>
   useMatchStore((s) => s.game?.movableTokenIds.includes(id) ?? false);
+
+/**
+ * This token's place within the cluster of tokens sharing its cell, so the UI
+ * can fan out overlapping pins. Base tokens (own yard slots) never cluster.
+ */
+export const useTokenCluster = (id: string) =>
+  useMatchStore(
+    useShallow((s) => {
+      const me = s.game?.tokens.find((t) => t.id === id);
+      if (!me || me.state === 'base') return { index: 0, count: 1 };
+      const key = cellKey(me);
+      const group = s.game!.tokens
+        .filter((t) => t.state !== 'base' && cellKey(t) === key)
+        .map((t) => t.id)
+        .sort();
+      return { index: group.indexOf(id), count: group.length };
+    }),
+  );
 
 export const useWinners = () =>
   useMatchStore(useShallow((s) => s.game?.winners ?? []));
