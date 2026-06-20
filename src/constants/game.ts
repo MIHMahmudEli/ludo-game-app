@@ -25,6 +25,15 @@ export const ENTRY_INDEX: Record<PlayerColor, number> = {
 };
 
 /**
+ * Seat-fill order so player numbers map to the canonical corners:
+ *   P1 → bottom-left (blue), P2 → top-right (green),
+ *   P3 → top-left (red),     P4 → bottom-right (yellow).
+ * This also yields the classic diagonal 2-player setup and puts the human
+ * "You" at the bottom in vs-AI games.
+ */
+export const SEAT_ORDER: readonly PlayerColor[] = ['blue', 'green', 'red', 'yellow'];
+
+/**
  * Globally safe ring cells where tokens cannot be captured:
  * the four start cells (0,13,26,39) and the four "star" cells 8 ahead of each.
  */

@@ -1,16 +1,23 @@
 import { useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BOARD_GRID_SIZE } from '@/constants';
 
 /**
- * Compute a square board size that fits the current viewport, with a sane
- * minimum (small phones) and a cap (so the board doesn't become enormous on
- * tablets). Returns the board size and the derived per-cell size.
+ * Compute a square board size that fits the current viewport on any device,
+ * mobile-first. Reserves space for the safe-area insets, the quit header and
+ * the two dice-box rows above/below the board, so the board stays centred and
+ * every player zone is fully visible without overlap.
  */
 export function useResponsiveBoard() {
   const { width, height } = useWindowDimensions();
-  // Leave room for the header and the two dice-box rows above/below the board.
-  const available = Math.min(width - 24, height - 330);
-  const boardSize = Math.max(240, Math.min(available, 520));
+  const insets = useSafeAreaInsets();
+
+  // Vertical chrome: safe areas + header (~56) + two dice-box rows & gaps (~180).
+  const verticalChrome = insets.top + insets.bottom + 56 + 180;
+  const heightBudget = height - verticalChrome;
+  const widthBudget = width - 24;
+
+  const boardSize = Math.max(220, Math.min(widthBudget, heightBudget, 540));
   const cell = boardSize / BOARD_GRID_SIZE;
   return { boardSize, cell };
 }

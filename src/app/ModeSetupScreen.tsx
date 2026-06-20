@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { Button, Card, Screen } from '@/components/ui';
-import { PLAYER_HEX } from '@/constants';
-import { PLAYER_COLORS, type GameConfig } from '@/types';
+import { PLAYER_HEX, SEAT_ORDER } from '@/constants';
+import { type GameConfig } from '@/types';
 import { useMatchStore } from '@/store';
 import type { RootScreenProps } from '@/navigation';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ export function ModeSetupScreen({ navigation, route }: RootScreenProps<'ModeSetu
   const [count, setCount] = useState<2 | 3 | 4>(4);
   const newGame = useMatchStore((s) => s.newGame);
 
-  const colors = PLAYER_COLORS.slice(0, count);
+  const colors = SEAT_ORDER.slice(0, count);
 
   const start = () => {
     const config: GameConfig = {

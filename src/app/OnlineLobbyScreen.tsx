@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Share, Text, TextInput, View } from 'react-native';
 import { Button, Card, Screen } from '@/components/ui';
 import type { GameConfig } from '@/types';
-import { PLAYER_COLORS } from '@/types';
+import { SEAT_ORDER } from '@/constants';
 import { useMatchStore, useMultiplayerStore, type PlayerCount } from '@/store';
 import type { RootScreenProps } from '@/navigation';
 
@@ -45,7 +45,7 @@ export function OnlineLobbyScreen({ navigation }: RootScreenProps<'Online'>) {
   // Until the realtime server is live, starting a room launches a local match
   // so the flow is playable end-to-end.
   const startMatch = () => {
-    const colors = PLAYER_COLORS.slice(0, count);
+    const colors = SEAT_ORDER.slice(0, count);
     const config: GameConfig = {
       mode: 'local-multiplayer',
       colors: [...colors],
