@@ -41,11 +41,12 @@ export function Board({ onTokenPress, onRoll }: BoardProps) {
     >
       <BoardBackground boardSize={boardSize} isDark={isDark} />
       <HomeGlow cell={cell} />
-      {PLAYER_COLORS.map((color) => (
-        <BoardDice key={color} color={color} cell={cell} onRoll={onRoll} />
-      ))}
       {tokenIds.map((id) => (
         <TokenView key={id} tokenId={id} cell={cell} onPress={onTokenPress} />
+      ))}
+      {/* Dice sit in the board corners, above tokens so they stay tappable. */}
+      {PLAYER_COLORS.map((color) => (
+        <BoardDice key={color} color={color} cell={cell} onRoll={onRoll} />
       ))}
     </View>
   );

@@ -73,14 +73,14 @@ export const BASE_QUADRANT: Record<
 };
 
 /**
- * Pixel-centre (in grid-cell units) of each home base — the empty middle of the
- * four yard slots, where that player's dice is shown inside the board.
+ * Position (in grid-cell units) of each player's dice — tucked into the outer
+ * corner of their home quadrant (the board's four corners).
  */
 export const HOME_DICE_CENTER: Record<PlayerColor, { x: number; y: number }> = {
-  red: { x: 3, y: 3 },
-  green: { x: 12, y: 3 },
-  yellow: { x: 12, y: 12 },
-  blue: { x: 3, y: 12 },
+  red: { x: 1.45, y: 1.45 }, // top-left
+  green: { x: 13.55, y: 1.45 }, // top-right
+  yellow: { x: 13.55, y: 13.55 }, // bottom-right
+  blue: { x: 1.45, y: 13.55 }, // bottom-left
 };
 
 /**
