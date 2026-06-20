@@ -38,8 +38,12 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
   const animationSpeed = useSettingsStore((s) => s.animationSpeed);
   const duration = TIMINGS.MOVE_DURATION * ANIMATION_SPEED_FACTOR[animationSpeed];
 
-  const box = cell * 0.96; // square bounding box, centred on the cell
+  const box = cell * 0.96; // square bounding box
   const pin = cell * 0.72; // teardrop side (its diagonal ≈ 1.0 cell)
+  const tipRadius = pin * 0.14; // sharp-corner (tip) radius
+  // Distance from the square's centre to the rotated tip — used to anchor the
+  // tip on the cell centre (classic map-pin: point marks the position).
+  const tipDist = (pin / 2 - tipRadius) * Math.SQRT2 + tipRadius;
 
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -53,7 +57,8 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
     target = coordForPosition(token.color, token.position);
   }
   const targetX = (target[1] + 0.5) * cell - box / 2;
-  const targetY = (target[0] + 0.5) * cell - box / 2;
+  // Shift up so the pin's tip (not its centre) rests on the cell centre.
+  const targetY = (target[0] + 0.5) * cell - box / 2 - tipDist;
 
   const mounted = useSharedValue(false);
   useEffect(() => {
@@ -130,7 +135,7 @@ function TokenViewComponent({ tokenId, cell, onPress }: TokenViewProps) {
           borderTopLeftRadius: pin / 2,
           borderTopRightRadius: pin / 2,
           borderBottomLeftRadius: pin / 2,
-          borderBottomRightRadius: pin * 0.24,
+          borderBottomRightRadius: tipRadius,
           borderWidth: movable ? 3 : 2.5,
           borderColor: movable ? '#F59E0B' : '#FFFFFF',
           transform: [{ rotate: '45deg' }],

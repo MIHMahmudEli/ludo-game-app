@@ -55,16 +55,18 @@ for (const col of COLORS) for (let i=0;i<4;i++) tokens.push({col, base:true, slo
 const place = [['red',0],['red',8],['red',54],['green',0],['yellow',0],['blue',0],['blue',13]];
 place.forEach(([col,pos],k)=>{ const t = tokens.find(t=>t.col===col && t.base); if(t){t.base=false; t.pos=pos;} });
 
-const p = C*0.72, half = p/2, rB = p*0.24; // teardrop side, sharp-corner radius
+const p = C*0.72, half = p/2, rB = p*0.14; // teardrop side, sharp-corner radius
+const tipDist = (half - rB) * Math.SQRT2 + rB; // centre->tip distance after rotate
 const tear = `M ${half},0 L ${p-half},0 A ${half},${half} 0 0 1 ${p},${half} L ${p},${p-rB} A ${rB},${rB} 0 0 1 ${p-rB},${p} L ${half},${p} A ${half},${half} 0 0 1 0,${p-half} L 0,${half} A ${half},${half} 0 0 1 ${half},0 Z`;
 for (const t of tokens) {
   const [r,c] = t.base ? SLOTS[t.col][t.slot] : coord(t.col, t.pos);
   const x = cx(c), y = cx(r);
-  s += `<g transform="translate(${x},${y}) rotate(45) translate(${-half},${-half})">`;
+  // Anchor the tip at the cell centre: square centre sits tipDist above it.
+  s += `<g transform="translate(${x},${y - tipDist}) rotate(45) translate(${-half},${-half})">`;
   s += `<path d="${tear}" fill="${HEX[t.col]}" stroke="#fff" stroke-width="2.5"/>`;
   s += `<circle cx="${half}" cy="${half}" r="${p*0.2}" fill="#fff"/>`;
   s += `</g>`;
-  s += `<circle cx="${x}" cy="${y}" r="2" fill="#000"/>`; // exact cell-centre dot
+  s += `<circle cx="${x}" cy="${y}" r="2.5" fill="#000"/>`; // exact cell-centre dot
 }
 s += `</svg>`;
 
