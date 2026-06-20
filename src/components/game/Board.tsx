@@ -3,6 +3,7 @@ import { useResponsiveBoard } from '@/hooks';
 import { useGameTheme } from '@/theme';
 import { useTokenIds } from '@/store';
 import { BoardBackground } from './BoardBackground';
+import { HomeGlow } from './HomeGlow';
 import { TokenView } from './TokenView';
 
 interface BoardProps {
@@ -36,6 +37,7 @@ export function Board({ onTokenPress }: BoardProps) {
       }}
     >
       <BoardBackground boardSize={boardSize} isDark={isDark} />
+      <HomeGlow cell={cell} />
       {tokenIds.map((id) => (
         <TokenView key={id} tokenId={id} cell={cell} onPress={onTokenPress} />
       ))}

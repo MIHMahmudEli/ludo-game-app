@@ -18,6 +18,8 @@ interface DiceProps {
   color: PlayerColor;
   disabled: boolean;
   onPress: () => void;
+  /** Edge length of the die in px. */
+  size?: number;
 }
 
 // Which of the 3x3 dot slots are filled for each face.
@@ -30,13 +32,12 @@ const FACES: Record<DiceValue, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
-const DIE = 72;
-
 /**
  * Animated die. Spins while rolling (flickering faces), then pops to the final
  * value. Pure presentation — it only renders the `value`/`isRolling` props.
  */
-export function Dice({ value, isRolling, color, disabled, onPress }: DiceProps) {
+export function Dice({ value, isRolling, color, disabled, onPress, size = 72 }: DiceProps) {
+  const DIE = size;
   const rotate = useSharedValue(0);
   const scale = useSharedValue(1);
   const [face, setFace] = useState<DiceValue>(value ?? 1);
