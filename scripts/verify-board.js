@@ -35,7 +35,10 @@ function coord(color, pos) {
 const N = 15, S = 600, C = S / N;
 const cx = (c) => (c + 0.5) * C;
 
+const DARK = { red:'#B71C1C', green:'#1E7E37', yellow:'#D69600', blue:'#1B5FB5' };
+const LIGHT = { red:'#EF5350', green:'#54C46E', yellow:'#FFC83D', blue:'#4F9BEE' };
 let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}">`;
+s += `<defs>` + COLORS.map(col=>`<linearGradient id="g-${col}" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="${LIGHT[col]}"/><stop offset="0.5" stop-color="${HEX[col]}"/><stop offset="1" stop-color="${DARK[col]}"/></linearGradient>`).join('') + `</defs>`;
 s += `<rect width="${S}" height="${S}" fill="#fff"/>`;
 for (const col of COLORS) {
   const [qr, qc] = QUAD[col];
@@ -55,16 +58,16 @@ for (const col of COLORS) for (let i=0;i<4;i++) tokens.push({col, base:true, slo
 const place = [['red',0],['red',8],['red',54],['green',0],['yellow',0],['blue',0],['blue',13]];
 place.forEach(([col,pos],k)=>{ const t = tokens.find(t=>t.col===col && t.base); if(t){t.base=false; t.pos=pos;} });
 
-const p = C*0.72, half = p/2, rB = p*0.14; // teardrop side, sharp-corner radius
-const tipDist = (half - rB) * Math.SQRT2 + rB; // centre->tip distance after rotate
-const tear = `M ${half},0 L ${p-half},0 A ${half},${half} 0 0 1 ${p},${half} L ${p},${p-rB} A ${rB},${rB} 0 0 1 ${p-rB},${p} L ${half},${p} A ${half},${half} 0 0 1 0,${p-half} L 0,${half} A ${half},${half} 0 0 1 ${half},0 Z`;
+const PIN = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z';
+const side = C*1.08, k = side/24;
 for (const t of tokens) {
   const [r,c] = t.base ? SLOTS[t.col][t.slot] : coord(t.col, t.pos);
   const x = cx(c), y = cx(r);
-  // Anchor the tip at the cell centre: square centre sits tipDist above it.
-  s += `<g transform="translate(${x},${y - tipDist}) rotate(45) translate(${-half},${-half})">`;
-  s += `<path d="${tear}" fill="${HEX[t.col]}" stroke="#fff" stroke-width="2.5"/>`;
-  s += `<circle cx="${half}" cy="${half}" r="${p*0.2}" fill="#fff"/>`;
+  // Anchor tip (12,22 in viewBox) at the cell centre.
+  s += `<g transform="translate(${x - side*0.5},${y - side*22/24}) scale(${k})">`;
+  s += `<path d="${PIN}" fill="url(#g-${t.col})" stroke="#fff" stroke-width="1"/>`;
+  s += `<circle cx="12" cy="9" r="3.1" fill="#fff"/>`;
+  s += `<ellipse cx="9.6" cy="6.4" rx="1.9" ry="2.4" fill="#fff" opacity="0.4"/>`;
   s += `</g>`;
   s += `<circle cx="${x}" cy="${y}" r="2.5" fill="#000"/>`; // exact cell-centre dot
 }
