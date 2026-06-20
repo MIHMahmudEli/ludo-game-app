@@ -1,26 +1,33 @@
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import { Board, DICE_BOX_SIZE, DiceBox, WinnerModal } from '@/components/game';
 import { Screen } from '@/components/ui';
-import { useGameController } from '@/hooks';
+import { useGameController, useResponsiveBoard } from '@/hooks';
 import { useHasGame, useMatchStore, usePlayers } from '@/store';
-import type { PlayerColor } from '@/types';
+import { PLAYER_COLORS, type PlayerColor } from '@/types';
 import type { RootScreenProps } from '@/navigation';
 
-/** Box placement matched to each colour's board quadrant. */
-const ROWS: PlayerColor[][] = [
-  ['red', 'green'], // top: left, right
-  ['blue', 'yellow'], // bottom: left, right
-];
+// How far each box is pushed outside the board (overlaps the edge slightly).
+const OUT = DICE_BOX_SIZE - 8;
+
+/** Attach each colour's box to its matching board corner. */
+const CORNER: Record<PlayerColor, ViewStyle> = {
+  red: { top: -OUT, left: 0 },
+  green: { top: -OUT, right: 0 },
+  blue: { bottom: -OUT, left: 0 },
+  yellow: { bottom: -OUT, right: 0 },
+};
 
 /**
- * The match screen. Each seated player has a square dice box in their corner
- * (around the board) that glows on their turn — no turn text. Holds no game
+ * The match screen. Each seated player has a square dice box attached to their
+ * board corner; the box glows on their turn — no turn text. Holds no game
  * logic; intents come from the controller.
  */
 export function GameScreen({ navigation }: RootScreenProps<'Game'>) {
   const hasGame = useHasGame();
   const players = usePlayers();
+  const { boardSize } = useResponsiveBoard();
   const restart = useMatchStore((s) => s.restart);
   const quit = useMatchStore((s) => s.quit);
   const { rollDice, handleTokenPress } = useGameController();
@@ -36,18 +43,6 @@ export function GameScreen({ navigation }: RootScreenProps<'Game'>) {
     navigation.replace('Home');
   };
 
-  const renderRow = (row: PlayerColor[]) => (
-    <View className="flex-row items-center justify-between px-4">
-      {row.map((color) =>
-        seated.has(color) ? (
-          <DiceBox key={color} color={color} onRoll={rollDice} />
-        ) : (
-          <View key={color} style={{ width: DICE_BOX_SIZE }} />
-        ),
-      )}
-    </View>
-  );
-
   return (
     <Screen className="px-3">
       <View className="flex-row items-center justify-between py-1">
@@ -58,13 +53,17 @@ export function GameScreen({ navigation }: RootScreenProps<'Game'>) {
         </Pressable>
       </View>
 
-      {renderRow(ROWS[0]!)}
-
       <View className="flex-1 items-center justify-center">
-        <Board onTokenPress={handleTokenPress} />
+        {/* Board + dice boxes attached to its corners. */}
+        <View style={{ width: boardSize, height: boardSize }}>
+          <Board onTokenPress={handleTokenPress} />
+          {PLAYER_COLORS.filter((c) => seated.has(c)).map((color) => (
+            <View key={color} style={{ position: 'absolute', ...CORNER[color] }}>
+              <DiceBox color={color} onRoll={rollDice} />
+            </View>
+          ))}
+        </View>
       </View>
-
-      {renderRow(ROWS[1]!)}
 
       <WinnerModal onPlayAgain={restart} onHome={goHome} />
     </Screen>
